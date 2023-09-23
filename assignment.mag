@@ -1,0 +1,73 @@
+function MyClosestVectorMyLLL(L,w)
+    Base := Basis(L);
+    //the elements of the basis are the rows
+    B := Matrix(Base);
+    n := #Base;
+
+    //LLL algorithm
+    k := 2;
+    while k le n do
+        for j in [1..k-1] do
+            mu_kj := InnerProduct(B[k], B[j])/InnerProduct(B[j], B[j]);
+            B[k] := B[k] - Round(mu_kj)*B[j];
+        end for;
+        mu_kk := InnerProduct(B[k], B[k-1])/InnerProduct(B[k-1], B[k-1]);
+        if InnerProduct(B[k], B[k]) ge (3/4 - mu_kk^2)*InnerProduct(B[k-1], B[k-1]) then
+            k +:=1;
+        else 
+            SwapRows(~B, k-1, k);
+            k := Maximum(k-1,2);
+        end if;
+    end while;
+
+    //Babai algorithm
+    //to use solution, we have to get the vector and the matrix in the same field
+    F := Parent(w[1]);
+    Fprimo := RealField();
+    B := ChangeRing(B, Fprimo);
+    w := ChangeRing(w, Fprimo);
+    x, _ := Solution(B, w);
+    x := ChangeRing(x, F);
+    B := ChangeRing(B, Integers());
+    v := [0 : i in [1..Ncols(B)]];
+    v := L!v;
+    for i in [1..n] do
+        v := v + Round(x[i])*B[i];
+    end for;
+    
+    return v;
+end function;
+
+function MyClosestVectorLLL (L, w)
+    Base := Basis(L);
+    B := Matrix(Base);
+    n := #Base;
+    B := LLL(B);
+
+    //Babai algorithm
+    //to use solution, we have to get the vector and the matrix in the same field
+    F := Parent(w[1]);
+    Fprimo := RealField();
+    B := ChangeRing(B, Fprimo);
+    w := ChangeRing(w, Fprimo);
+    x, _ := Solution(B, w);
+    x := ChangeRing(x, F);
+    B := ChangeRing(B, Integers());
+    v := [0 : i in [1..Ncols(B)]];
+    v := L!v;
+    for i in [1..n] do
+        v := v + Round(x[i])*B[i];
+    end for;
+    
+    return v;
+end function;
+
+function MyClosestVector (L, w)
+    v1 := MyClosestVectorMyLLL(L,w);
+    v2 := MyClosestVectorLLL(L,w);
+    if (Norm(v1-w) lt Norm(v2-w)) then
+        return v1;
+    else
+        return v2;
+    end if;
+end function;
